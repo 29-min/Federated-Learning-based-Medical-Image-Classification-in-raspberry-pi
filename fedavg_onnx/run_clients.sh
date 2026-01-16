@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# FedAvg + ONNX 클라이언트 실행 스크립트
+# 사용법: ./run_clients.sh [서버주소]
+
+SERVER_ADDRESS=${1:-"192.168.45.100:8080"}
+MIN_CLIENTS=3
+
+echo "================================"
+echo "FedAvg + ONNX Client Launcher"
+echo "================================"
+echo "Server: $SERVER_ADDRESS"
+echo "Min Clients: $MIN_CLIENTS"
+echo "================================"
+echo ""
+echo "다음 명령어를 각 터미널에서 실행하세요:"
+echo ""
+
+for i in $(seq 0 $((MIN_CLIENTS-1))); do
+    echo "터미널 $((i+1)):"
+    echo "python client.py --client_id $i --server_address $SERVER_ADDRESS"
+    echo ""
+done
+
+echo "================================"
