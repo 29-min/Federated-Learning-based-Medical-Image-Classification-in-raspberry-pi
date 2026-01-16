@@ -38,7 +38,7 @@ cleaned_code/
 ├── README.md                    # 프로젝트 문서
 │
 ├── paper/                       # 논문
-│   └── Lee_Gyumin_Thesis_2026.pdf  # 졸업논문 (Korean)
+│   └── Lee_Kumin_Thesis_2026.pdf  # 졸업논문 (Korean)
 │
 ├── fedavg/                      # FedAvg 알고리즘
 │   ├── server.py               # FedAvg 서버 (글로벌 평가 기능 포함)
