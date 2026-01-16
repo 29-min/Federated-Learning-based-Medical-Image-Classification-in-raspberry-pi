@@ -295,7 +295,7 @@ comparison_onnx_comparison_{timestamp}/
 
 ## 📖 참고 문헌
 
-논문의 전체 참고문헌은 [원문](https://github.com/29-min/Federated-Learning-based-Medical-Image-Classification-in-raspberry-pi)을 참조하세요.
+논문의 전체 참고문헌은 paper 파일 내부 논문을 참고해주세요.
 
 주요 참고:
 - McMahan et al., "Communication-Efficient Learning of Deep Networks from Decentralized Data" (FedAvg)
@@ -308,20 +308,11 @@ comparison_onnx_comparison_{timestamp}/
 
 Copyright © 2025 Lee Kumin. Licensed under [CC BY 4.0](http://creativecommons.org/licenses/by/4.0/).
 
-## 👤 저자
-
 **이규민 (Lee Kumin)**
 한국외국어대학교 컴퓨터공학부
 📧 steve918@naver.com
-
-**지도교수**: 지수연 교수님
 
 ## 🙏 Acknowledgments
 
 본 연구는 학부 과정에서 습득한 지식을 바탕으로 캡스톤 프로젝트와 별개로 수행된 개별 연구입니다. 연구의 방향을 지도해 주시고 아낌없는 조언을 주신 지수연 교수님과 컴퓨터공학부의 모든 교수님들께 깊은 감사를 드립니다.
 
----
-
-**Full Paper**: [한국외국어대학교 컴퓨터공학부 졸업논문](https://github.com/29-min/Federated-Learning-based-Medical-Image-Classification-in-raspberry-pi)
-
-**GitHub Repository**: [https://github.com/29-min/Federated-Learning-based-Medical-Image-Classification-in-raspberry-pi](https://github.com/29-min/Federated-Learning-based-Medical-Image-Classification-in-raspberry-pi)
