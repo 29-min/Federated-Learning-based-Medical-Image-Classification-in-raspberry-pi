@@ -1,40 +1,35 @@
-# 이기종 엣지 디바이스 환경에서의 연합학습 기반 의료 영상 분류 시스템
+# 이기종 Raspberry Pi에서 돌아가는 연합학습 의료 영상 분류
 
-> **Federated Learning-based Medical Image Classification System in Heterogeneous Edge Device Environment**
+> 학부 졸업논문 · 단독 연구 (2025.09 – 2025.12) · [논문 PDF (국문)](./paper/Lee_Kumin_Thesis_2026.pdf)
+> Federated Learning-based Medical Image Classification System in Heterogeneous Edge Device Environment
 
-한국외국어대학교 컴퓨터공학부 졸업논문 (2026.02)
-저자: 이규민 (Lee Kumin)
+연합학습 선행 연구 대부분은 시뮬레이션에서 검증됩니다. 이 프로젝트는 사양이 다른 Raspberry Pi 3대를 각각 다른 병원의 컴퓨터로 두고, 실제 기기에서도 같은 성능이 나오는지와 어떤 제약이 생기는지를 확인했습니다.
 
-[![GitHub](https://img.shields.io/badge/GitHub-Repository-blue)](https://github.com/29-min/Federated-Learning-based-Medical-Image-Classification-in-raspberry-pi)
+## 한눈에 보기
 
-## 📄 논문
+| | |
+| --- | --- |
+| 문제 | 검증된 ResNet18로 시작했지만 가장 저사양인 Pi 4B(2GB)에서는 한 라운드에 1시간이 넘게 걸리고 발열로 꺼짐 |
+| 한 일 | 약 100K 파라미터 경량 CNN 설계 · Flower로 Pi 3대 클러스터 구성 · Non-IID(α=0.5)에서 FedAvg·FedProx 비교 · ONNX 추론 최적화 · 특정 클래스 성능 저하를 대조 실험으로 원인 분석 |
+| 결과 | 정확도 82.44%, 중앙집중형(85.29%)의 96.7% · ONNX로 추론 평균 1.36배 빠름, 정확도 손실 0% |
+| 발견 | 더 나을 것으로 예상한 FedProx가 이 환경에서는 μ가 클수록 오히려 낮아짐 |
+| 남은 과제 | 통신이 불안정한 기기 하나가 라운드 전체를 붙잡고, 모두가 가장 느린 기기를 기다리는 구조 |
 
-**[📖 Full Thesis (Korean)](./paper/Lee_Gyumin_Thesis_2026.pdf)**
+![FedAvg와 FedProx 정확도 비교](docs/accuracy.png)
 
-이규민 (2026). "이기종 엣지 디바이스 환경에서의 연합학습 기반 의료 영상 분류 시스템". 한국외국어대학교 컴퓨터공학부 졸업논문.
+![기기별 PyTorch와 ONNX 추론 시간](docs/onnx_speedup.png)
 
-## 📋 논문 요약
-
-본 연구는 이기종 Raspberry Pi 환경에서 연합학습(Federated Learning)을 활용하여 의료 영상 분류 모델을 구현하고 평가하였습니다. 실제 의료 기관의 다양한 하드웨어 환경을 모사하기 위해 서로 다른 사양의 Raspberry Pi 3종(Pi 5 8GB, Pi 5 4GB, Pi 4B 2GB)을 사용하여 시스템적 이질성(System Heterogeneity) 환경을 구축하였습니다.
-
-### 주요 성과
-
-- **FedAvg 알고리즘**: 82.44% 정확도, F1 Score 0.7749 달성
-- **중앙집중형 학습 대비**: 96.7%의 성능 유지 (데이터 프라이버시 보장하면서)
-- **ONNX 최적화**: PyTorch 대비 1.29배~1.44배 추론 속도 향상 (정확도 손실 0%)
-- **실제 엣지 환경**: 2GB RAM Raspberry Pi 4B에서도 안정적 동작
-
-## 🎯 연구 목적
+## 연구 목적
 
 1. 이질적 Raspberry Pi 클러스터로 실제 의료 기관의 다양한 하드웨어 환경 재현
 2. 극단적 Non-IID 환경(Dirichlet α=0.5)에서 FedAvg와 FedProx 성능 비교
 3. ONNX 최적화를 통한 추론 속도, 메모리 효율성 개선 효과 검증
 4. 개인정보 보호와 엣지 제약을 만족하는 연합학습 시스템의 실용성 평가
 
-## 📁 프로젝트 구조
+## 프로젝트 구조
 
 ```
-cleaned_code/
+.
 ├── README.md                    # 프로젝트 문서
 │
 ├── paper/                       # 논문
@@ -63,7 +58,7 @@ cleaned_code/
     └── preprocess_iid_data.py  # IID 데이터 전처리
 ```
 
-## 🔬 실험 환경
+## 실험 환경
 
 ### 하드웨어
 
@@ -101,7 +96,7 @@ cleaned_code/
 | Client 1 | 47,577개 | 52.9% | 가장 많은 데이터, 가장 큰 영향력 |
 | Client 2 | 24,419개 | 27.1% | Class 7 (88.9%) 독점 |
 
-## 🚀 설치 및 실행
+## 설치 및 실행
 
 ### 필수 패키지 설치
 
@@ -113,7 +108,7 @@ pip install scikit-learn pandas numpy
 pip install onnx onnxruntime onnxsim  # ONNX 실험용
 ```
 
-### 1️⃣ FedAvg 실행
+### 1. FedAvg 실행
 
 **서버 시작:**
 ```bash
@@ -133,7 +128,7 @@ python client.py --client_id 1 --total_clients 3 --alpha 0.5 --server_address 19
 python client.py --client_id 2 --total_clients 3 --alpha 0.5 --server_address 192.168.x.x:8080
 ```
 
-### 2️⃣ FedProx 실행
+### 2. FedProx 실행
 
 **서버 시작:**
 ```bash
@@ -147,7 +142,7 @@ python server.py --num_rounds 20 --num_clients 3 --alpha 0.5 --mu 0.01 --port 80
 python client.py --client_id 0 --total_clients 3 --alpha 0.5 --mu 0.01 --server_address 192.168.x.x:8080
 ```
 
-### 3️⃣ FedAvg + ONNX 비교 실험
+### 3. FedAvg + ONNX 비교 실험
 
 **데이터 전처리 (최초 1회):**
 ```bash
@@ -166,7 +161,7 @@ python server.py --num_rounds 20 --min_clients 3 --experiment_name onnx_comparis
 python client.py --client_id 0 --server_address 192.168.x.x:8080
 ```
 
-## ⚙️ 주요 파라미터
+## 주요 파라미터
 
 ### 공통 파라미터
 
@@ -188,7 +183,7 @@ python client.py --client_id 0 --server_address 192.168.x.x:8080
   - `0.1`: 중간 regularization
   - `1.0`: 강한 regularization
 
-## 📊 실험 결과
+## 실험 결과
 
 ### 알고리즘 성능 비교
 
@@ -211,11 +206,11 @@ python client.py --client_id 0 --server_address 192.168.x.x:8080
 | **Server (M1 Pro)** | 2.256s | 1.345s | **1.68배** | 40.4% | 0% |
 
 **핵심 성과:**
-- ✅ 정확도 손실 **0%** (모든 클라이언트)
-- ✅ 평균 **1.36배** 추론 속도 향상
-- ✅ 저사양 기기(2GB RAM)에서도 **1.29배** 개선
+- 정확도 손실 **0%** (모든 클라이언트)
+- 평균 **1.36배** 추론 속도 향상
+- 저사양 기기(2GB RAM)에서도 **1.29배** 개선
 
-## 🏗️ 모델 아키텍처
+## 모델 아키텍처
 
 **SimpleCNN (경량 CNN)**
 - Conv2d (3 → 16) + ReLU + MaxPool(2×2)
@@ -227,7 +222,7 @@ python client.py --client_id 0 --server_address 192.168.x.x:8080
 
 **총 파라미터**: 약 100K (경량화 설계)
 
-## 💾 결과 저장
+## 결과 저장
 
 ### FedAvg / FedProx
 
@@ -257,7 +252,7 @@ comparison_onnx_comparison_{timestamp}/
 └── comparison_summary.txt             # 최종 요약
 ```
 
-## 🔍 주요 연구 결과
+## 주요 연구 결과
 
 ### 1. FedAvg의 우수한 성능
 
@@ -286,14 +281,14 @@ comparison_onnx_comparison_{timestamp}/
 - **원인 3**: Train-Test 분포 불일치 (Train 10.4% vs Test 5.9%)
 - **원인 4**: Local-Global Distribution Mismatch (집계 시 희석)
 
-## 💡 핵심 기여
+## 핵심 기여
 
 1. **실제 엣지 환경 검증**: GPU 시뮬레이션이 아닌 실제 Raspberry Pi 클러스터 사용
 2. **이기종 시스템 대응**: 2GB~8GB RAM 환경에서 모두 안정적 동작
 3. **ONNX 최적화 적용**: 추론 단계 최적화로 실용성 향상
 4. **Non-IID + 실제 데이터**: Dirichlet 분포 + PathMNIST 의료 데이터 활용
 
-## 📖 참고 문헌
+## 참고 문헌
 
 논문의 전체 참고문헌은 paper 파일 내부 논문을 참고해주세요.
 
@@ -302,7 +297,7 @@ comparison_onnx_comparison_{timestamp}/
 - Li et al., "Federated Optimization in Heterogeneous Networks" (FedProx)
 - Yang et al., "MedMNIST v2" (PathMNIST 데이터셋)
 
-## 📜 라이선스
+## 라이선스
 
 본 프로젝트는 학술 연구 목적으로 작성되었습니다.
 
@@ -310,9 +305,9 @@ Copyright © 2025 Lee Kumin. Licensed under [CC BY 4.0](http://creativecommons.o
 
 **이규민 (Lee Kumin)**
 한국외국어대학교 컴퓨터공학부
-📧 steve918@naver.com
+steve918@naver.com
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 본 연구는 학부 과정에서 습득한 지식을 바탕으로 캡스톤 프로젝트와 별개로 수행된 개별 연구입니다. 연구의 방향을 지도해 주시고 아낌없는 조언을 주신 지수연 교수님과 컴퓨터공학부의 모든 교수님들께 깊은 감사를 드립니다.
 
