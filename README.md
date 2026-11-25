@@ -60,6 +60,8 @@
 
 ## 실험 환경
 
+![시스템 구성도](docs/system_architecture.png)
+
 ### 하드웨어
 
 | 역할 | 기기 | 사양 |
@@ -88,6 +90,10 @@
 - **클래스 수**: 9개 (대장 조직 병리 분류)
   - Adipose(지방), Background(배경), Debris(세포 파편), Lymphocytes(림프구), Mucus(점액), Smooth Muscle(평활근), Normal Colon Mucosa(정상 점막), Cancer-associated Stroma(암 관련 기질), Colorectal Adenocarcinoma Epithelium(대장 선암 상피)
 
+훈련 데이터(NCT, 환자 86명)와 테스트 데이터(CRC-VAL-HE-7K, 환자 50명)는 서로 다른 기관에서 수집돼 클래스 비율이 다릅니다. 아래는 서버가 글로벌 평가에 쓰는 테스트셋 분포입니다.
+
+<img src="docs/test_distribution.png" width="480" alt="서버 테스트셋 클래스 분포">
+
 ### Non-IID 데이터 분할 (Dirichlet α=0.5)
 
 | Client | 총 데이터 | 비율 | 특징 |
@@ -95,6 +101,14 @@
 | Client 0 | 18,000개 | 20.0% | Class 8 (58.3%) 편향 |
 | Client 1 | 47,577개 | 52.9% | 가장 많은 데이터, 가장 큰 영향력 |
 | Client 2 | 24,419개 | 27.1% | Class 7 (88.9%) 독점 |
+
+![클라이언트별 클래스 분포](docs/client_distribution.png)
+
+같은 데이터를 "각 클래스를 어느 클라이언트가 얼마나 갖고 있나"로 바꿔 보면 독점 구조가 더 잘 보입니다. Class 7(STR)은 88.9%가 Client 2(Pi 4B)에 몰려 있습니다.
+
+<img src="docs/client_class_heatmap.png" width="640" alt="클래스별 클라이언트 데이터 소유 비율 히트맵">
+
+**평가 방식.** 처음에는 테스트 데이터도 클라이언트별로 나눴는데, 그러면 클라이언트마다 평가 기준이 달라져 지표가 왜곡됐습니다. 그래서 (1) 훈련 데이터만 Dirichlet로 나누고, (2) 각 클라이언트 훈련 데이터의 20%를 로컬 검증용으로 떼고, (3) 테스트셋은 나누지 않고 서버에서 글로벌 평가에만 쓰도록 바꿨습니다.
 
 ## 설치 및 실행
 
@@ -196,6 +210,21 @@ python client.py --client_id 0 --server_address 192.168.x.x:8080
 | FedProx (μ=0.1) | 78.57% | 0.7240 | 0.7927 | 37.3% |
 | FedProx (μ=0.3) | 69.97% | 0.6318 | 0.6840 | 9.0% |
 
+### 라운드별 학습 곡선
+
+FedAvg(LR=0.001)는 1라운드 64.72%에서 시작해 20라운드에 82.44%까지 올랐고, 최고치는 19라운드의 83.18%였습니다.
+
+![FedAvg 학습 곡선](docs/fedavg_training_curves.png)
+
+<details>
+<summary>FedProx (μ=0.01) 학습 곡선</summary>
+
+61.07%로 FedAvg보다 낮게 시작했지만 상승 폭은 더 컸습니다(+20.46%p vs +17.72%p). 다만 9라운드에 83.75%로 최고치를 찍은 뒤 조금씩 내려가 최종 81.53%로 끝났습니다.
+
+![FedProx 학습 곡선](docs/fedprox_training_curves.png)
+
+</details>
+
 ### ONNX 최적화 효과
 
 | 구분 | PyTorch 시간 | ONNX 시간 | 속도 향상 | 시간 단축률 | 정확도 차이 |
@@ -211,6 +240,8 @@ python client.py --client_id 0 --server_address 192.168.x.x:8080
 - 저사양 기기(2GB RAM)에서도 **1.29배** 개선
 
 ## 모델 아키텍처
+
+![SimpleCNN 구조](docs/simplecnn_architecture.png)
 
 **SimpleCNN (경량 CNN)**
 - Conv2d (3 → 16) + ReLU + MaxPool(2×2)
@@ -280,6 +311,22 @@ comparison_onnx_comparison_{timestamp}/
 - **원인 2**: Non-IID 분할로 Client 2가 88.9% 독점
 - **원인 3**: Train-Test 분포 불일치 (Train 10.4% vs Test 5.9%)
 - **원인 4**: Local-Global Distribution Mismatch (집계 시 희석)
+
+중앙집중형(ResNet18)으로 학습해도 Class 7은 43.2%에 그쳐, 데이터 자체가 구분하기 어려운 클래스라는 걸 먼저 확인했습니다.
+
+![클래스별 정확도: 연합학습 vs 중앙집중형](docs/classwise_fl_vs_centralized.png)
+
+그런데 난이도만으로는 설명이 안 되는 패턴이 있었습니다. Client 2의 로컬 STR 정확도는 7라운드에 정점을 찍고 다시 떨어졌습니다.
+
+| Round | Client 2 STR 로컬 정확도 | F1 |
+| --- | --- | --- |
+| 1 | 0.78% | 0.0156 |
+| 7 | **68.70%** | 0.8042 |
+| 10 | 61.94% | 0.7599 |
+| 15 | 44.05% | 0.6098 |
+| 20 | 53.80% | 0.6953 |
+
+Client 2는 STR 데이터의 88.9%를 갖고 있지만 집계 가중치는 데이터 양 기준 27.1%뿐이고, 테스트셋의 STR 비율(5.9%)도 훈련셋(10.4%)보다 낮습니다. 라운드가 진행될수록 글로벌 모델이 테스트셋 분포 쪽으로 끌려가면서 Client 2가 학습한 STR 특징이 희석된 것으로 해석했습니다.
 
 ## 핵심 기여
 
